@@ -1,0 +1,35 @@
+[
+    {
+      "type": "event",
+      "text": "Farmers Market at San Pedro Square • Saturday • 9 AM to 1 PM"
+    },
+    {
+      "type": "event",
+      "text": "Live Music & Food Trucks at Downtown San Jose Plaza • Saturday • 6 PM to 10 PM"
+    },
+    {
+      "type": "road_closure",
+      "text": "Santa Clara St closed from 5th–7th • June 22–23"
+    },
+    {
+      "type": "road_closure",
+      "text": "Market St closed near St. James Park for weekend festival • June 21–22"
+    },
+    {
+      "type": "crime",
+      "text": "Petty theft reported at 10th & Julian • June 16"
+    },
+    {
+      "type": "crime",
+      "text": "Noise complaint at 2 AM near South 1st St & Reed Ave • June 17"
+    },
+    {
+      "type": "event",
+      "text": "San Jose Art Walk on First Friday • Downtown San Jose • July 5"
+    },
+    {
+      "type": "event",
+      "text": "Community clean-up at Alum Rock Park • Sunday • 10 AM to 12 PM"
+    }
+  ]
+  

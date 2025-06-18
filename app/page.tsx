@@ -1,162 +1,165 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
+import { MapPin, Moon, Sun, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, MessageSquare, Loader2 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
 
 export default function HometownGPTHomepage() {
+  /** ──────────── local state ──────────── */
   const [question, setQuestion] = useState("")
-  const [radius, setRadius] = useState("")
-  const [response, setResponse] = useState("")
+  const [radius, setRadius] = useState("25")
+  const [messages, setMessages] = useState<
+    { q: string; a: string }[]
+  >([])
   const [isLoading, setIsLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement | null>(null)
 
+  /** auto-scroll on new answer */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, isLoading])
+
+  /** theme toggle */
+  const toggleTheme = () =>
+    document.documentElement.classList.toggle("dark")
+
+  /** ask GPT */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!question.trim() || !radius) return
+    if (!question.trim()) return
 
+    const q = question
+    setQuestion("")
     setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setResponse(
-        `Based on your question "${question}" within ${radius} miles, here's what I found: There are several local events and activities happening in your area this weekend. This includes farmers markets, community festivals, and outdoor activities. I'd recommend checking out the downtown area for live music and food trucks on Saturday evening.`,
-      )
+
+    try {
+      const r = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q, radius }),
+      })
+      const data = await r.json()
+      setMessages((prev) => [...prev, { q, a: data.answer }])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { q, a: "Sorry, something went wrong." },
+      ])
+    } finally {
       setIsLoading(false)
-    }, 2500)
+    }
   }
 
   return (
-    <div className="h-screen flex flex-col justify-center bg-gradient-to-b from-sky-50 to-white">
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-0 max-w-4xl">
-        {/* Hero Section */}
-        <div className="text-center mb-2">
-          {/* Desktop: Icon left of title, Mobile: Icon above title */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-2 mb-2">
-            <div className="p-3 bg-sky-600 rounded-2xl shadow-lg">
-              <MapPin className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-slate-800 tracking-tight">HometownGPT</h1>
+    <div className="flex h-screen dark:bg-[#0b0f19]">
+      {/* ─────────── Sidebar placeholder ─────────── */}
+      <aside className="hidden md:flex w-64 flex-col border-r dark:border-slate-800 p-4 gap-4">
+        <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+          History&nbsp;🚧
+        </h2>
+        <p className="text-xs text-slate-500">
+          (Coming soon)
+        </p>
+      </aside>
+
+      {/* ─────────── Main panel ─────────── */}
+      <section className="flex flex-1 flex-col">
+
+        {/* sticky header */}
+        <header className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b bg-white/80 backdrop-blur-md px-6 py-3 dark:bg-[#0b0f19]/80 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <span className="p-2 bg-sky-600 rounded-xl">
+              <MapPin className="h-5 w-5 text-white" />
+            </span>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white">
+              HometownGPT
+            </h1>
           </div>
 
-          <p className="text-lg md:text-xl text-slate-600 font-light mb-2 leading-relaxed">Ask your city anything.</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            <Sun className="h-5 w-5 dark:hidden" />
+            <Moon className="h-5 w-5 hidden dark:block" />
+          </Button>
+        </header>
 
-          {/* Dynamic Fact/Stat */}
-          <div className="inline-block bg-white/80 backdrop-blur-sm border border-sky-100 rounded-2xl px-6 py-4 shadow-sm">
-            <p className="text-lg font-semibold text-slate-700 flex items-center justify-center gap-2">
-              <span className="text-2xl">🚧</span>7 road closures this weekend in San Jose. Ask what affects your area.
+        {/* chat scroll area */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          {messages.map((m, i) => (
+            <Card
+              key={i}
+              className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow"
+            >
+              <CardContent className="px-5 py-4 space-y-2">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <strong>You asked:</strong> {m.q}
+                </p>
+                <p className="whitespace-pre-line text-slate-800 dark:text-slate-100">
+                  {m.a}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+
+          {isLoading && (
+            <p className="text-center text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin h-4 w-4" /> Thinking…
             </p>
-          </div>
+          )}
+
+          {/* dummy div for auto-scroll */}
+          <div ref={bottomRef} />
         </div>
 
-        {/* Input Section */}
-        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-3 md:p-4">
-            <form onSubmit={handleSubmit} className="space-y-2">
-              {/* Question Input */}
-              <div className="space-y-3 mb-2">
-                <Label htmlFor="question" className="text-slate-700 font-medium text-lg">
-                  What would you like to know?
-                </Label>
-                <Input
-                  id="question"
-                  type="text"
-                  placeholder="What's happening in my area this weekend?"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  className="text-lg py-4 px-4 border-sky-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl"
-                />
-              </div>
+        {/* input dock */}
+        <footer className="border-t dark:border-slate-800 p-4">
+          <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
+            <Input
+              placeholder="Ask about San Jose…"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              autoComplete="off"
+              className="flex-1"
+            />
 
-              {/* Radius Selection */}
-              <div className="space-y-3 mb-2">
-                <Label htmlFor="radius" className="text-slate-700 font-medium text-lg">
-                  Search radius
-                </Label>
-                <Select value={radius} onValueChange={setRadius}>
-                  <SelectTrigger className="py-4 px-4 border-sky-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl text-lg">
-                    <SelectValue placeholder="Select radius in miles" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 mile</SelectItem>
-                    <SelectItem value="5">5 miles</SelectItem>
-                    <SelectItem value="10">10 miles</SelectItem>
-                    <SelectItem value="25">25 miles</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <Select
+              value={radius}
+              onValueChange={setRadius}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Radius" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 mi</SelectItem>
+                <SelectItem value="5">5 mi</SelectItem>
+                <SelectItem value="10">10 mi</SelectItem>
+                <SelectItem value="25">25 mi</SelectItem>
+              </SelectContent>
+            </Select>
 
-              {/* Try asking examples */}
-              <div className="text-center space-y-2 mb-4">
-                <p className="text-xs font-medium text-slate-600">Try asking:</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs border border-slate-200">
-                    "What roads are closed near me?"
-                  </span>
-                  <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs border border-slate-200">
-                    "Any free events this weekend?"
-                  </span>
-                  <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full text-xs border border-slate-200">
-                    "Crime stats in my neighborhood?"
-                  </span>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-center">
-                <Button
-                  type="submit"
-                  disabled={!question.trim() || !radius || isLoading}
-                  className="bg-[#1e3a8a] hover:bg-[#1d4ed8] text-white py-4 px-12 text-lg font-bold rounded-2xl transition-all duration-200 transform hover:scale-105 hover:shadow-xl disabled:hover:scale-100 disabled:hover:shadow-none shadow-lg hover:shadow-2xl hover:shadow-blue-500/25"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Thinking...
-                    </div>
-                  ) : (
-                    "Ask HometownGPT"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Large Response Container */}
-        <Card
-          className={`shadow-lg border-0 bg-slate-100 transition-all duration-500 ${response ? "opacity-100 translate-y-0" : "opacity-100"}`}
-        >
-          <CardContent className="p-2 md:p-3">
-            <div className="min-h-[40px] flex items-center justify-center">
-              {response ? (
-                <div
-                  className={`w-full transition-all duration-500 ${response ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-sky-100 rounded-xl flex-shrink-0">
-                      <MessageSquare className="h-6 w-6 text-sky-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-slate-800 mb-4">Here's what I found:</h3>
-                      <p className="text-slate-700 leading-relaxed text-lg">{response}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-600 text-lg font-light text-center font-medium">
-                  Your AI-powered local answer will appear here.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Button
+              type="submit"
+              disabled={isLoading || !question.trim()}
+            >
+              Ask
+            </Button>
+          </form>
+        </footer>
+      </section>
     </div>
   )
 }
